@@ -28,30 +28,29 @@ class Thing {
     define('has', getProxy({
         apply: (_, thisValue, args) => getProxy({
           get: (_, name) => {
+            const childThing = new Thing(name);
+            define('having', getProxy({}, childThing.has), childThing);
 
             if (args[0] > 1) {
-              thisValue[name] = new Array(args[0]).fill(new Thing(name));
+              thisValue[name] = new Array(args[0]).fill(childThing);
               define('each', getProxy({
                 apply: (target, thisValue, args) => {
                   const tempFn = getProxy({
                     apply: (target, thisValue, _) => {
-                      // const newFn = new Function('thing', `thing.${target.toString().split('=>').pop().trim()}`);
-                      console.log(thisValue);
-                      // newFn.call(thisValue, thisValue);
+                      const newFn = new Function('', `this.${target.toString().split('=>').pop().trim()}`);
+                      newFn.call(thisValue);
                     }
                   }, args[0]);
                   thisValue.forEach((thing) => {
-                    define('having', getProxy({}, thing.has), thing);
-                    tempFn.call(thing, thing);
+                    tempFn.call(thing);
                   });
                 }
               }, false), thisValue[name]);
-            } else {
-              thisValue[name] = new Thing(name);
-              define('having', getProxy({}, thisValue[name].has), thisValue[name]);
+
+              return thisValue[name];
             }
 
-            return thisValue[name];
+            return (thisValue[name] = childThing);
           }
         })
       }, false)
@@ -86,11 +85,13 @@ const main = function() {
   // с этим надо побороться теперь
   // console.log(jane.head.eyes);
   // console.log(jane.is_a_momo);
+
   jane.has(2).legs
   console.log('jane.legs.length ->', jane.legs.length);
   console.log('jane.legs[0] instanceof Thing ->', jane.legs[0] instanceof Thing);
-  console.log('jane.legs.each(leg => having(5).fingers) ->', jane.legs.each(leg => having(5).fingers));
-
+  jane.has(2).arms.each(arm => having(1).hand.having(5).fingers);
+  console.log('jane.arms[0].hand.fingers.length ->', jane.arms[0].hand.fingers.length);
+  //
   jane.has(1).head;
   console.log('jane.head instanceof Thing ->', jane.head instanceof Thing);
 
