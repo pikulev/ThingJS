@@ -11,7 +11,7 @@ describe('ThingJS', () => {
 
   describe('Thing can define boolean methods on an instance', () => {
 
-    it('should return correct value from is_a method', () => {
+    it('should return correct value from is_a_* method', () => {
       jane.is_a.man;
       assert.equal(true, jane.is_a_man);
 
@@ -20,7 +20,7 @@ describe('ThingJS', () => {
       assert.equal(true, jane.is_a_cowboy);
     });
 
-    it('should return correct value from is_not_a method', () => {
+    it('should return correct value from is_not_a_* method', () => {
       jane.is_not_a.man;
       assert.equal(true, jane.is_not_a_man);
 
