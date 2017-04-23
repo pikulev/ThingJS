@@ -53,14 +53,35 @@ describe('ThingJS', () => {
   });
 
 
-  xdescribe('Thing can define number of child things', () => {
-    it('', () => {
+  describe('Thing can define single items', () => {
+    it('should define instance of Thing', () => {
+      jane.has(1).head;
+      assert.equal(true, jane.head instanceof Thing);
+    });
 
+    it('should has having method', () => {
+      jane.has(1).head;
+      assert.equal('function', typeof jane.head.having);
+    });
+
+    it('should has having method that define single child thing', () => {
+      jane.has(1).head.having(1).nose;
+      assert.equal(true, jane.head.nose instanceof Thing);
+    });
+
+    it('should has child with heaving method', () => {
+      jane.has(1).head.having(1).nose;
+      assert.equal('function', typeof jane.head.nose.having);
+    });
+
+    it('should not has child properties at the parent level', () => {
+      jane.has(1).head.having(1).nose;
+      assert.equal('undefined', typeof jane.nose);
     });
   });
 
 
-  xdescribe('Thing can define single items', () => {
+  xdescribe('Thing can define number of child things', () => {
     it('', () => {
 
     });
