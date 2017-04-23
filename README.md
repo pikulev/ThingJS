@@ -2,6 +2,7 @@
 
 _My 'The builder of things' solution_
 
+[![Build Status](https://travis-ci.org/pikulev/ThingJS.svg?branch=master)](https://travis-ci.org/pikulev/ThingJS)
 
 ### Description:
 
