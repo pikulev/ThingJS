@@ -81,21 +81,35 @@ describe('ThingJS', () => {
   });
 
 
-  xdescribe('Thing can define number of child things', () => {
-    it('', () => {
+  describe('Thing can define number of child things', () => {
+    it('should create an array when number of child more than one', () => {
+      jane.has(2).legs
+      assert.equal(2, jane.legs.length);
+    });
 
+    it('should create an array with instances of Thing', () => {
+      jane.has(2).legs;
+      assert.equal(true, jane.legs[0] instanceof Thing);
     });
   });
 
 
-  xdescribe('Thing can define number of things in a chainable and natural format', () => {
-    it('', () => {
-
+  describe('Thing can define number of things in a chainable and natural format', () => {
+    it('should define properties by each method', () => {
+      jane.has(2).arms.each(arm => having(1).hand.having(5).fingers);
+      assert.equal(5, jane.arms[0].hand.fingers.length);
     });
   });
 
 
   xdescribe('Thing can define properties on nested items', () => {
+    it('', () => {
+
+    });
+  });
+
+
+  xdescribe('Thing can define methods', () => {
     it('', () => {
 
     });
