@@ -19,7 +19,7 @@ export class Thing {
     define('is_the', getProxy({
       get: (target, name) => (target[name] = getProxy({
         get: (_, nameValue) => {
-          define(name, () => nameValue);
+          define(name, nameValue);
           return this;
         }
       }))
