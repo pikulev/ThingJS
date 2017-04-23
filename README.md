@@ -1,5 +1,9 @@
 # ThingJS
 
+_My 'The builder of things' solution_
+
+--------------------------------------------------
+
 ### Description:
 
 For this kata you will be using some meta-programming magic to create a new Thing object. This object will allow you to define things in a descriptive sentence like format.
