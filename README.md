@@ -1,4 +1,4 @@
-# ThingJS
+## Thing.js
 
 _My 'The builder of things' solution_
 
