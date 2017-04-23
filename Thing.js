@@ -33,6 +33,13 @@ export class Thing {
       }
     }, new Function());
 
+    const getSafeFunctionResult = (thisValue, callback, args = []) => {
+      const thisPropsKeys = Object.getOwnPropertyNames(thisValue)
+        .filter(prop => thisValue.propertyIsEnumerable(prop));
+      const newFn = new Function(...thisPropsKeys, `return ${callback.toString()}`);
+      return newFn.apply(thisValue, [...thisPropsKeys.map(prop => thisValue[prop])])(...args);
+    };
+
     const generateNestedItemsCallback = () => getProxy({
       apply: (_, thisValue, args) => {
         const getFnBody = fnSrt => `this.${fnSrt.toString()
@@ -81,10 +88,7 @@ export class Thing {
 
           define(name, getProxy({
             apply: (_, thisValue, args) => {
-              const thisPropsKeys = Object.getOwnPropertyNames(thisValue)
-                .filter(prop => thisValue.propertyIsEnumerable(prop));
-              const newFn = new Function(...thisPropsKeys, `return ${callback.toString()}`);
-              const callResult = newFn.apply(thisValue, [...thisPropsKeys.map(prop => thisValue[prop])])(...args);
+              const callResult = getSafeFunctionResult(thisValue, callback, args);
               return callsHistory.push(callResult) && callResult;
             }
           }, new Function));
