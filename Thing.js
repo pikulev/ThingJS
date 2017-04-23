@@ -1,11 +1,12 @@
 export class Thing {
   constructor(name) {
-    const define = (name, getValue, target = this) => Object.defineProperty(target, name, { get: () => getValue });
-    const getProxy = (handler, targetOrEmptyObject = true) =>
-      new Proxy(typeof targetOrEmptyObject === 'boolean' ? (targetOrEmptyObject ? {} : function() {
-      }) : targetOrEmptyObject, handler);
+    const define = (name, getValue, target = this, enumerable = false) => Object.defineProperty(target, name, {
+      get: () => getValue,
+      enumerable: enumerable
+    });
+    const getProxy = (handler, target = {}) => new Proxy(target, handler);
 
-    const generateBooleanMethods = (value, thisValue = this) => getProxy({
+    const generateBooleanProperties = (value, thisValue = this) => getProxy({
       get: (_, name) => {
         define(`is_a_${name}`, value, thisValue);
         define(`is_not_a_${name}`, !value, thisValue);
@@ -16,11 +17,21 @@ export class Thing {
     const generatePropertyWithValue = (thisValue = this) => getProxy({
       get: (target, name) => (target[name] = getProxy({
         get: (_, nameValue) => {
-          define(name, nameValue, thisValue);
+          define(name, nameValue, thisValue, true);
           return thisValue;
         }
       }))
     });
+
+    const generateHasMethod = handler => getProxy({
+      apply: (_, thisValue, args) => {
+        return getProxy({
+          get: (_, name) => {
+            return handler.call(thisValue, name, args[0] || 0);
+          }
+        });
+      }
+    }, new Function());
 
     const generateNestedItemsCallback = () => getProxy({
       apply: (_, thisValue, args) => {
@@ -32,47 +43,53 @@ export class Thing {
           apply: (target, thisValue) => new Function('h', getFnBody(target)).call(thisValue)
         }, args[0]).call(thing) && thing);
       }
-    }, false);
+    }, new Function());
 
 
-    define('name', name);
-    define('is_a', generateBooleanMethods(true));
-    define('is_not_a', generateBooleanMethods(false));
+    define('name', name, this, true);
+    define('is_a', generateBooleanProperties(true));
+    define('is_not_a', generateBooleanProperties(false));
     define('is_the', generatePropertyWithValue());
+    define('has', generateHasMethod((propName, itemsNumber) => {
+      const getNestedItem = (propName) => {
+        const childThing = new Thing(propName);
+        define('having', getProxy({}, childThing.has), childThing);
+        define('with', getProxy({}, childThing.having), childThing);
+        define('being_the', generatePropertyWithValue(childThing), childThing);
+        return childThing;
+      };
 
-    define('has', getProxy({
-        apply: (_, thisValue, args) => getProxy({
-          get: (_, name) => {
-            const getNestedItem = (name) => {
-              const childThing = new Thing(name);
-              define('having', getProxy({}, childThing.has), childThing);
-              define('with', getProxy({}, childThing.having), childThing);
-              define('being_the', generatePropertyWithValue(childThing), childThing);
-              return childThing;
-            };
+      if (itemsNumber > 1) {
+        this[propName] = [...Array(itemsNumber)].map(() => getNestedItem(propName));
+        define('each', generateNestedItemsCallback(), this[propName]);
+        return this[propName];
+      }
 
-            if (args[0] > 1) {
-              thisValue[name] = [...Array(args[0])].map(() => getNestedItem(name));
-              define('each', generateNestedItemsCallback(), thisValue[name]);
-              return thisValue[name];
-            }
+      return (this[propName] = getNestedItem(propName));
+    }));
 
-            return (thisValue[name] = getNestedItem(name));
+    define('can', getProxy({
+      get: (target, name) => getProxy({
+        apply: (_, thisValue, args) => {
+          let callsHistory = [];
+          const argsCopy = [...args];
+          const callback = argsCopy.pop();
+
+          if (argsCopy.length) {
+            argsCopy.forEach(methodName => define(methodName, callsHistory));
           }
-        })
-      }, false)
-    );
+
+          define(name, getProxy({
+            apply: (_, thisValue, args) => {
+              const thisPropsKeys = Object.getOwnPropertyNames(thisValue)
+                .filter(prop => thisValue.propertyIsEnumerable(prop));
+              const newFn = new Function(...thisPropsKeys, `return ${callback.toString()}`);
+              const callResult = newFn.apply(thisValue, [...thisPropsKeys.map(prop => thisValue[prop])])(...args);
+              return callsHistory.push(callResult) && callResult;
+            }
+          }, new Function));
+        }
+      }, new Function())
+    }));
   }
-}
-
-
-const main = function() {
-  const jane = new Thing('Jane');
-
-  jane.has(2).arms.each(arm => having(1).hand.having(5).fingers);
-  console.log(5, jane.arms[0].hand.fingers.length);
-};
-
-if (require.main === module) {
-  main();
 }

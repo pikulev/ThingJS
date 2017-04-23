@@ -4,9 +4,10 @@ import { Thing } from '../Thing';
 describe('ThingJS', () => {
 
   let jane;
+  const THING_NAME = 'Jane';
 
   beforeEach(() => {
-    jane = new Thing('Jane');
+    jane = new Thing(THING_NAME);
   });
 
 
@@ -136,9 +137,16 @@ describe('ThingJS', () => {
   });
 
 
-  xdescribe('Thing can define methods', () => {
-    it('', () => {
+  describe('Thing can define methods', () => {
+    it('should define method with callback', () => {
+      jane.can.speak('spoke', phrase => `${name} says: ${phrase}`);
+      assert.equal(`${THING_NAME} says: hello`, jane.speak('hello'));
+    });
 
+    it('should track methods calls', () => {
+      jane.can.speak('spoke', phrase => `${name} says: ${phrase}`);
+      jane.speak('hello');
+      assert.deepEqual([`${THING_NAME} says: hello`], jane.spoke);
     });
   });
 });
