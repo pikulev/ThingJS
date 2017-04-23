@@ -107,9 +107,31 @@ describe('ThingJS', () => {
   });
 
 
-  xdescribe('Thing can define properties on nested items', () => {
-    it('', () => {
+  describe('Thing can define properties on nested items', () => {
+    it('should provide being_the method', () => {
+      jane.has(1).head.having(2).eyes.each(eye => being_the.color.blue);
+      assert.equal('blue', jane.head.eyes[0].color);
+      assert.equal('undefined', typeof jane.head.color);
+    });
 
+    it('should provide being_the method that does not reflect on the parent item', () => {
+      jane.has(1).head.having(2).eyes.each(eye => being_the.color.blue);
+      assert.equal('undefined', typeof jane.head.color);
+    });
+
+    it('should provide with() method defines single child of nested item that is instance of Thing', () => {
+      jane.has(1).head.having(2).eyes.each(eye => being_the.color.blue.with(1).pupil);
+      assert.equal(true, jane.head.eyes[0].pupil instanceof Thing);
+    });
+
+    it('should provide with() method defines single child of nested item that has all nested item`s methods', () => {
+      jane.has(1).head.having(2).eyes.each(eye => being_the.color.blue.with(1).pupil.being_the.color.red);
+      assert.equal('red', jane.head.eyes[0].pupil.color);
+    });
+
+    it('should provide with() method defines children of nested item', () => {
+      jane.has(1).head.having(2).eyes.each(eye => being_the.color.blue.with(1).pupil);
+      assert.equal(true, jane.head.eyes[0].pupil instanceof Thing);
     });
   });
 

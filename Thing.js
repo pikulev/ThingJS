@@ -22,6 +22,19 @@ export class Thing {
       }))
     });
 
+    const generateNestedItemsCallback = () => getProxy({
+      apply: (_, thisValue, args) => {
+        const getFnBody = fnSrt => `this.${fnSrt.toString()
+          .replace(/^[^{]*{\s*[return]*/, '').replace(/\s*}[^}]*$/, '')
+          .split('=>').pop().trim()}`;
+
+        thisValue.map(thing => getProxy({
+          apply: (target, thisValue) => new Function('h', getFnBody(target)).call(thisValue)
+        }, args[0]).call(thing) && thing);
+      }
+    }, false);
+
+
     define('name', name);
     define('is_a', generateBooleanMethods(true));
     define('is_not_a', generateBooleanMethods(false));
@@ -30,36 +43,21 @@ export class Thing {
     define('has', getProxy({
         apply: (_, thisValue, args) => getProxy({
           get: (_, name) => {
+            const getNestedItem = (name) => {
+              const childThing = new Thing(name);
+              define('having', getProxy({}, childThing.has), childThing);
+              define('with', getProxy({}, childThing.having), childThing);
+              define('being_the', generatePropertyWithValue(childThing), childThing);
+              return childThing;
+            };
 
             if (args[0] > 1) {
-              thisValue[name] = [...Array(args[0])].map(() => new Thing(name));
-
-              define('each', getProxy({
-                apply: (_, thisValue, args) => {
-                  const getFnBody = fnSrt => `this.${fnSrt.toString()
-                    .replace(/^[^{]*{\s*[return]*/, '').replace(/\s*}[^}]*$/, '')
-                    .split('=>').pop().trim()}`;
-
-                  thisValue.map((thing) => {
-                    define('having', getProxy({}, thing.has), thing);
-                    define('being_the', generatePropertyWithValue(thing), thing);
-                    // define('with', getProxy({}, thing.has), thing);
-
-                    getProxy({
-                      apply: (target, thisValue) => new Function('h', getFnBody(target)).call(thisValue)
-                    }, args[0]).call(thing)
-
-                    return thing;
-                  });
-                }
-              }, false), thisValue[name]);
-
+              thisValue[name] = [...Array(args[0])].map(() => getNestedItem(name));
+              define('each', generateNestedItemsCallback(), thisValue[name]);
               return thisValue[name];
             }
 
-            const childThing = new Thing(name);
-            define('having', getProxy({}, childThing.has), childThing);
-            return (thisValue[name] = childThing);
+            return (thisValue[name] = getNestedItem(name));
           }
         })
       }, false)
