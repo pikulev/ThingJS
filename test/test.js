@@ -120,6 +120,12 @@ describe('ThingJS', () => {
       assert.equal('undefined', typeof jane.head.color);
     });
 
+    it('should provide and_the method', () => {
+      jane.has(2).eyes.each(eye => being_the.color.blue.and_the.shape.round);
+      assert.equal('blue', jane.eyes[0].color);
+      assert.equal('round', jane.eyes[0].shape);
+    });
+
     it('should provide with() method defines single child of nested item that is instance of Thing', () => {
       jane.has(1).head.having(2).eyes.each(eye => being_the.color.blue.with(1).pupil);
       assert.equal(true, jane.head.eyes[0].pupil instanceof Thing);

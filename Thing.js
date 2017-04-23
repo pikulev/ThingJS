@@ -18,7 +18,12 @@ export class Thing {
       get: (target, name) => (target[name] = getProxy({
         get: (_, nameValue) => {
           define(name, nameValue, thisValue, true);
-          return thisValue;
+
+          return getProxy({
+            get: (_, nextPropName) => nextPropName === 'and_the'
+              ? generatePropertyWithValue(thisValue)
+              : thisValue[nextPropName]
+          });
         }
       }))
     });
@@ -60,20 +65,20 @@ export class Thing {
     define('has', generateHasMethod((propName, itemsNumber) => {
       const getNestedItem = (propName) => {
         const childThing = new Thing(propName);
-        define('having', getProxy({}, childThing.has), childThing);
-        define('with', getProxy({}, childThing.having), childThing);
+        define('with', getProxy({}, childThing.having, new Function()), childThing);
         define('being_the', generatePropertyWithValue(childThing), childThing);
         return childThing;
       };
 
       if (itemsNumber > 1) {
-        this[propName] = [...Array(itemsNumber)].map(() => getNestedItem(propName));
+        this[propName] = [...Array(itemsNumber)].map(() => getNestedItem(propName.slice(0, -1)));
         define('each', generateNestedItemsCallback(), this[propName]);
         return this[propName];
       }
 
       return (this[propName] = getNestedItem(propName));
     }));
+    define('having', getProxy({}, this.has, new Function()));
 
     define('can', getProxy({
       get: (target, name) => getProxy({
