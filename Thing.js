@@ -5,48 +5,60 @@ export class Thing {
       new Proxy(typeof targetOrEmptyObject === 'boolean' ? (targetOrEmptyObject ? {} : function() {
       }) : targetOrEmptyObject, handler);
 
-    const generateBooleanMethods = (value) => getProxy({
+    const generateBooleanMethods = (value, thisValue = this) => getProxy({
       get: (_, name) => {
-        define(`is_a_${name}`, value);
-        define(`is_not_a_${name}`, !value);
-        return this;
+        define(`is_a_${name}`, value, thisValue);
+        define(`is_not_a_${name}`, !value, thisValue);
+        return thisValue;
       }
+    });
+
+    const generatePropertyWithValue = (thisValue = this) => getProxy({
+      get: (target, name) => (target[name] = getProxy({
+        get: (_, nameValue) => {
+          define(name, nameValue, thisValue);
+          return thisValue;
+        }
+      }))
     });
 
     define('name', name);
     define('is_a', generateBooleanMethods(true));
     define('is_not_a', generateBooleanMethods(false));
-    define('is_the', getProxy({
-      get: (target, name) => (target[name] = getProxy({
-        get: (_, nameValue) => {
-          define(name, nameValue);
-          return this;
-        }
-      }))
-    }));
+    define('is_the', generatePropertyWithValue());
 
     define('has', getProxy({
         apply: (_, thisValue, args) => getProxy({
           get: (_, name) => {
-            const childThing = new Thing(name);
-            define('having', getProxy({}, childThing.has), childThing);
 
             if (args[0] > 1) {
-              thisValue[name] = new Array(args[0]).fill(childThing);
+              thisValue[name] = [...Array(args[0])].map(() => new Thing(name));
+
               define('each', getProxy({
                 apply: (_, thisValue, args) => {
                   const getFnBody = fnSrt => `this.${fnSrt.toString()
                     .replace(/^[^{]*{\s*[return]*/, '').replace(/\s*}[^}]*$/, '')
                     .split('=>').pop().trim()}`;
-                  thisValue.forEach(thing => getProxy({
-                    apply: (target, thisValue) => new Function('h', getFnBody(target)).call(thisValue)
-                  }, args[0]).call(thing));
+
+                  thisValue.map((thing) => {
+                    define('having', getProxy({}, thing.has), thing);
+                    define('being_the', generatePropertyWithValue(thing), thing);
+                    // define('with', getProxy({}, thing.has), thing);
+
+                    getProxy({
+                      apply: (target, thisValue) => new Function('h', getFnBody(target)).call(thisValue)
+                    }, args[0]).call(thing)
+
+                    return thing;
+                  });
                 }
               }, false), thisValue[name]);
 
               return thisValue[name];
             }
 
+            const childThing = new Thing(name);
+            define('having', getProxy({}, childThing.has), childThing);
             return (thisValue[name] = childThing);
           }
         })

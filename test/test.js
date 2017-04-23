@@ -99,6 +99,11 @@ describe('ThingJS', () => {
       jane.has(2).arms.each(arm => having(1).hand.having(5).fingers);
       assert.equal(5, jane.arms[0].hand.fingers.length);
     });
+
+    it('should define properties by each method that are Thing instances', () => {
+      jane.has(2).arms.each(arm => having(1).hand.having(5).fingers);
+      assert.equal(true, jane.arms[0].hand.fingers[0] instanceof Thing);
+    });
   });
 
 
